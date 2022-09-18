@@ -1,0 +1,15 @@
+*.log
+*.pyc
+src/main/mainapp-ui/node_modules/
+src/main/env/
+src/main/static/
+src/main/ito/__pycache__/
+src/main/package-lock.json
+src/main/package.json
+src/main/core/migrations/
+src/main/core/__pycache__/
+src/main/authentication/migrations/
+src/main/authentication/__pycache__/
+src/main/mainapp/migrations/
+src/main/mainapp/__pycache__/
+data/

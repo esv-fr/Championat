@@ -1,0 +1,33 @@
+version: "3.9"
+   
+services:
+
+  database:
+    image: postgres:11
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5455:5432"
+
+  web:
+    build: .
+    environment:
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_DATABASE=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_ENGINE=django.db.backends.postgresql_psycopg2
+      - DEBUG=True
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_PASSWORD=admin
+      - DJANGO_SUPERUSER_EMAIL="admin@admin.com"
+    ports:
+      - "9001:8000"
+    depends_on:
+      - database
+

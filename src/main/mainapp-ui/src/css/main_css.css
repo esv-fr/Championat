@@ -1,0 +1,75 @@
+.contractModalTextField {
+    margin: 1%;
+}
+
+.contractModalCard {
+    padding: 0;
+}
+
+.messengerTextCard {
+    padding: 5px;
+    min-height: 30vh;
+    max-height: 30vh;
+    overflow: scroll;
+}
+
+.messengerLineCard {
+    padding: 5px;
+    min-height: 50vh;
+    max-height: 50vh;
+    overflow: scroll;
+}
+
+.btnstyle {
+    margin-left: 1%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+    width: 20%;
+}
+
+.btnstyleright {
+    margin-right: 1%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+    width: 20%;
+}
+
+.mapStyle {
+  flex: 1;
+  width: 900px;
+  height: 900px;
+  resizeMode: 'contain';
+}
+
+.tabstyle {
+  font-size: larger;
+}
+
+.monitoringButton {
+  width: 100%;
+}
+
+.menuStyle {
+  font-size: larger;
+}
+
+.gridstyle {
+  width: 100%;
+}
+
+.informstyle {
+  margin: 3%;
+}
+
+.divblockstyle {
+}
+
+.divblockloaderstyle {
+  margin: 3%;
+}
+
+.cardinfostyle {
+  margin-top: 1%;
+  margin-bottom: 1%;
+  padding: 0;
+}

@@ -1,0 +1,10 @@
+{
+  "realm": "brd-u210001936-crmlkito",
+  "auth-server-url": "https://sso-tech-rhc-sso.apps.okd.techpark.local/auth",
+  "ssl-required": "external",
+  "resource": "brd-u210001936-crmlkito",
+  "credentials": {
+    "secret": "3ef3e94e-4c91-45d8-8bf8-fac41e3ac6b5"
+  },
+  "confidential-port": 0
+}
