@@ -1,4 +1,4 @@
-import React, {Fragment, useState, useEffect} from 'react'
+import React, {Fragment, useState, useEffect, useRef} from 'react'
 import axios from 'axios';
 
 import { useParams, useSearchParams } from 'react-router-dom';
@@ -14,6 +14,8 @@ import { Select } from '@consta/uikit/Select';
 import { TextField  } from '@consta/uikit/TextField';
 import { Line } from '@consta/charts/Line';
 import { Radar } from '@consta/charts/Radar';
+
+import { Gauge } from '@consta/charts/Gauge';
 
 import { Modal } from '@consta/uikit/Modal';
 
@@ -85,6 +87,23 @@ export const Monitoring = () => {
 
     const [graphIn, setGraphIn] = useState(null)
 
+    function useInterval(callback, delay) {
+      const savedCallback = useRef();
+
+      useEffect(() => {
+        savedCallback.current = callback;
+      });
+
+      useEffect(() => {
+        function tick() {
+          savedCallback.current();
+        }
+
+        let id = setInterval(tick, delay);
+        return () => clearInterval(id);
+      }, [delay]);
+    }
+
     useEffect(()=>{
                 axios({
                         method: "GET",
@@ -133,7 +152,6 @@ export const Monitoring = () => {
                     setItemsSensor(null)
                     setReadyTypeSensor(false)
 		        })
-
     }, [])
 
     useEffect(()=>{
@@ -146,6 +164,43 @@ export const Monitoring = () => {
             })
         }
     }, [readyEx])
+
+// get data for risk graphic 
+
+     const RiskUpdate = () => {
+
+        const [prediction, setPrediction] = useState([]) // state for risk graphic variables
+        let next_value;
+
+        useInterval(() => {
+             axios({
+                 method: "GET",
+                 url: window.location.origin+'/api/getprediction/',
+                 headers:
+                       {
+                        Authorization : 'JWT '+ localStorage.getItem('token'),
+                       },
+                 }).then(response => {
+                     next_value = response.data
+                     next_value['date'] = prediction.length
+                     //console.log('Prediction: ', prediction, ' length: ', prediction.length)
+                     //console.log('Value: ', next_value)
+                     setPrediction((prediction) => [...prediction, next_value])
+                 })
+                 .catch(error => {
+                     console.log('Report error: ' + error)
+                 })
+
+         }, 3000); // call updated risk data every 3 sec
+
+        return <Line data={prediction} xField='date' yField={'value'} seriesField="temp" />
+          //const options = {
+          //  percent: next_value['value'],
+          //};
+
+        //return <Gauge {...options} />;
+
+    }
 
 
     useEffect(()=>{
@@ -264,7 +319,7 @@ export const Monitoring = () => {
                     <GridItem col="1" />
 
                     <GridItem col="1" />
-                    <GridItem col="10" style={styleGrid} >
+                    <GridItem col="6" style={styleGrid} >
                         <Card className = "messengerLineCard">
                             {(lineUpdate===false) && (ready===true) && (valueSensor!==null) && (typeGraph.label==='Линейный') && (
                                 <>
@@ -292,7 +347,17 @@ export const Monitoring = () => {
                             )}
                         </Card>
                     </GridItem>
+                    <GridItem col="4" style={styleGrid} >
+                        <Card className = "messengerLineCardRisk">
+                            {(valueDevice!==null) && (
+                                <>
+                                   <RiskUpdate />
+                                </>
+                            )}
+                        </Card>
+                    </GridItem>
                     <GridItem col="1" />
+
                 </Grid>
 
             <Modal

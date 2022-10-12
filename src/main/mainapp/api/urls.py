@@ -1,7 +1,7 @@
 from rest_framework import routers
 from django.urls import path
 
-from .views import (MessengerViewSet, ContractsViewSet, ActionsViewSet, DevicesViewSet, CompaniesViewSet, PlanViewSet, \
+from .views import (GetPrediction, MessengerViewSet, ContractsViewSet, ActionsViewSet, DevicesViewSet, CompaniesViewSet, PlanViewSet, \
                     AddContract, UpdContract, AddDevice, UpdDevice, SendTextMessenger, Monitoring, AddPlan, UpdPlan, \
                     DownloadFile, UploadFile, UploadXmlWITSML, SensorsViewSet, Report)
 
@@ -27,6 +27,7 @@ urlpatterns = [
     path('upload_xml_witsml/', UploadXmlWITSML.as_view()),
     path('upload/', UploadFile.as_view()),
     path('reports/', Report.as_view()),
+    path('getprediction/', GetPrediction.as_view()),
 ]
 
 urlpatterns +=router.urls

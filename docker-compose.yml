@@ -2,6 +2,9 @@ version: "3.9"
    
 services:
 
+  redis:
+    image: redis:alpine
+
   database:
     image: postgres:11
     volumes:
@@ -26,8 +29,67 @@ services:
       - DJANGO_SUPERUSER_USERNAME=admin
       - DJANGO_SUPERUSER_PASSWORD=admin
       - DJANGO_SUPERUSER_EMAIL="admin@admin.com"
+      - EMAIL_LOGIN=dynamics.oris@mail.ru
+      - EMAIL_PASSWORD=yEbXHz3mzZGykFKG6ifH
+      - EMAIL_SERVER=imap.mail.ru
+      - CELERY_BROKER=redis://redis:6379
+      - EMAIL_HOST
+      - SMTP_PORT=2525
+      - SMTP_TLS=True
+      - SMTP_SSL=False
     ports:
       - "9001:8000"
     depends_on:
-      - database
+      - redis
 
+  celery:
+    build:
+      context: .
+      dockerfile: celery.Dockerfile
+    environment:
+      - COMMAND=celery
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_DATABASE=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_ENGINE=django.db.backends.postgresql_psycopg2
+      - DEBUG=True
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_PASSWORD=admin
+      - DJANGO_SUPERUSER_EMAIL="admin@admin.com"
+      - EMAIL_LOGIN=dynamics.oris@mail.ru
+      - EMAIL_PASSWORD=yEbXHz3mzZGykFKG6ifH
+      - EMAIL_SERVER=imap.mail.ru
+      - CELERY_BROKER=redis://redis:6379/0
+      - DJANGO_HOST=web
+      - DJANGO_PORT=8000
+    depends_on:
+      - redis
+      - web
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: celery.Dockerfile
+    environment:
+      - COMMAND=beat
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_DATABASE=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_ENGINE=django.db.backends.postgresql_psycopg2
+      - DEBUG=True
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_PASSWORD=admin
+      - DJANGO_SUPERUSER_EMAIL="admin@admin.com"
+      - EMAIL_LOGIN=dynamics.oris@mail.ru
+      - EMAIL_PASSWORD=yEbXHz3mzZGykFKG6ifH
+      - EMAIL_SERVER=imap.mail.ru
+      - CELERY_BROKER=redis://redis:6379/0
+      - DJANGO_HOST=web
+      - DJANGO_PORT=8000
+    depends_on:
+      - redis
+      - web

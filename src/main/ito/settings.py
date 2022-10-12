@@ -1,5 +1,6 @@
 from pathlib import Path
 import environ
+import imaplib
 
 env = environ.Env()
 
@@ -34,7 +35,22 @@ INSTALLED_APPS = [
     'mainapp',
     'core',
     'authentication',
+    'django_celery_beat',
 ]
+
+CELERY_BROKER_URL = env.str('CELERY_BROKER', default='celery_broker')
+CELERY_RESULT_BACKEND = env.str('CELERY_BROKER', default='celery_broker')
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+EMAIL_SERVER = env.str('EMAIL_SERVER', default='imap.mail.ru')
+SESSION_MAIL = {'SESSION_MAIL': imaplib.IMAP4_SSL(EMAIL_SERVER)}
+
+EMAIL_HOST_USER = env.str('EMAIL_LOGIN', default='email_login')
+EMAIL_HOST_PASSWORD = env.str('EMAIL_PASSWORD', default='email_password')
+EMAIL_HOST = env.str('EMAIL_HOST', default='smtp.mail.ru')
+EMAIL_PORT = env.str('SMTP_PORT', default=2525)
+EMAIL_USE_TLS = env.str('SMTP_TLS', default=True)
+EMAIL_USE_SSL = env.str('SMTP_SSL', default=False)
+EMAIL_BACKEND = env.str('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -169,6 +185,12 @@ LOGGING = {
             'formatter': 'file',
             'filename': BASE_DIR / 'auth_info.log',
         },
+        'smtp_server_file':{
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'formatter': 'file',
+            'filename': BASE_DIR / 'smtp_server_file.log',
+        },
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
@@ -181,6 +203,11 @@ LOGGING = {
             'formatter': 'console',
         },
         'mail_admins': {
+            'level': 'DEBUG',
+            'class': 'django.utils.log.AdminEmailHandler',
+            'include_html': False,
+        },
+        'smtp_server': {
             'level': 'DEBUG',
             'class': 'django.utils.log.AdminEmailHandler',
             'include_html': False,
@@ -200,6 +227,10 @@ LOGGING = {
         'auth': {
             'level': 'DEBUG',
             'handlers': ['auth_file', 'console'],
+        },
+        'smtp_server': {
+            'level': 'DEBUG',
+            'handlers': ['smtp_server_file', 'console'],
         },
         'order_to_email': {
             'level': 'DEBUG',

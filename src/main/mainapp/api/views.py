@@ -8,7 +8,12 @@ from django.db.models import Sum
 from django.db.models import Q
 
 from datetime import datetime, timedelta, date
+from django.core import mail
+from django.utils import timezone
+from django.conf import settings
+
 import json
+from tensorflow.keras.models import load_model
 
 from django.http import FileResponse
 from django.core.files import File
@@ -22,9 +27,11 @@ from os.path import isfile, join
 
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .serializers import (MessengerSerializer, ActionsSerializer, DevicesSerializer, CompaniesSerializer, ContractsSerializer, SensorsSerializer)
+from .serializers import (MessengerSerializer, ActionsSerializer, DevicesSerializer, CompaniesSerializer,
+                          ContractsSerializer, SensorsSerializer)
 from core.models import Messenger, Devices, Companies, Actions, Contracts, UserCompany, Sensors
 from authentication.models import CustomUser
+
 
 class MessengerViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -45,11 +52,9 @@ class MessengerViewSet(viewsets.ModelViewSet):
 
 
 class SensorsViewSet(viewsets.ModelViewSet):
-
     permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
-
         queryset = Sensors.objects.order_by('name').distinct('name')
         serializer = SensorsSerializer(queryset, many=True)
 
@@ -70,7 +75,7 @@ class DevicesViewSet(viewsets.ModelViewSet):
         id = request.GET.get('id', 'null')
         print('Params devices: ', id)
 
-        if(id=='null'):
+        if (id == 'null'):
             user_instance = CustomUser.objects.get(username=self.request.user)
             company = UserCompany.objects.get(user=user_instance).company
             contract = Contracts.objects.filter(Q(customer=company) | Q(executor=company))
@@ -93,7 +98,7 @@ class PlanViewSet(viewsets.ModelViewSet):
         id = request.GET.get('id', 'null')
         print('Params devices: ', id)
 
-        if(id=='null'):
+        if (id == 'null'):
             queryset = Actions.objects.all()
             serializer = ActionsSerializer(queryset, many=True)
         else:
@@ -108,6 +113,7 @@ class CompaniesViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Companies.objects.all()
     serializer_class = CompaniesSerializer
+
 
 class ContractsViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -124,12 +130,11 @@ class ContractsViewSet(viewsets.ModelViewSet):
         query_set = queryset.filter(Q(customer=company) | Q(executor=company))
         return query_set
 
-class AddContract(APIView):
 
+class AddContract(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-
         print(request.__dict__)
         print("-------- Headers -----------")
         print(request.headers)
@@ -137,92 +142,91 @@ class AddContract(APIView):
         rData = request.data
         print(rData)
 
-        #company = Companies.objects.filter(name=rData['executorName']['label']).get()
+        # company = Companies.objects.filter(name=rData['executorName']['label']).get()
         company = Companies.objects.get(name=rData['executorName']['label'])
         userId = CustomUser.objects.get(username=rData['username'])
         customer = UserCompany.objects.get(user=userId).company
 
         print(company)
 
-        resp = Contracts.objects.create(name=rData['name'], entity=rData['entity'], status=rData['status'], executor=company, customer=customer, cost=rData['cost'])
+        resp = Contracts.objects.create(name=rData['name'], entity=rData['entity'], status=rData['status'],
+                                        executor=company, customer=customer, cost=rData['cost'])
 
-
-        #fields = ('name', 'entity', 'status', 'executor_name', 'executor_inn', 'executor_kpp')
+        # fields = ('name', 'entity', 'status', 'executor_name', 'executor_inn', 'executor_kpp')
 
         return Response("OK")
 
-class UpdContract(APIView):
 
+class UpdContract(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-
         print("--------- Data --------------")
         rData = request.data
         print(rData)
 
-        #company = Companies.objects.filter(name=rData['executorName']['label']).get()
+        # company = Companies.objects.filter(name=rData['executorName']['label']).get()
         company = Companies.objects.get(name=rData['executorName']['label'])
         userId = CustomUser.objects.get(username=rData['username'])
         customer = UserCompany.objects.get(user=userId).company
 
         print(company)
 
-        resp = Contracts.objects.filter(pk=rData['pk']).update(name=rData['name'], entity=rData['entity'], status=rData['status'], executor=company, customer=customer, cost=rData['cost'])
+        resp = Contracts.objects.filter(pk=rData['pk']).update(name=rData['name'], entity=rData['entity'],
+                                                               status=rData['status'], executor=company,
+                                                               customer=customer, cost=rData['cost'])
 
-
-        #fields = ('name', 'entity', 'status', 'executor_name', 'executor_inn', 'executor_kpp')
+        # fields = ('name', 'entity', 'status', 'executor_name', 'executor_inn', 'executor_kpp')
 
         return Response("OK")
 
 
 class AddDevice(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-
         print("--------- Data --------------")
         rData = request.data
         print(rData)
 
-        #company = Companies.objects.filter(name=rData['executorName']['label']).get()
+        # company = Companies.objects.filter(name=rData['executorName']['label']).get()
         contract = Contracts.objects.get(name=rData['contractName']['label'])
         userId = CustomUser.objects.get(username=rData['username'])
         owner = UserCompany.objects.get(user=userId).company
 
-        resp = Devices.objects.create(name=rData['name'], address=rData['address'], latitude=rData['latitude'], longitude=rData['longitude'], status=rData['status'], contract=contract, owner=owner)
+        resp = Devices.objects.create(name=rData['name'], address=rData['address'], latitude=rData['latitude'],
+                                      longitude=rData['longitude'], status=rData['status'], contract=contract,
+                                      owner=owner)
 
-        #fields = ('name', 'entity', 'status', 'executor_name', 'executor_inn', 'executor_kpp')
+        # fields = ('name', 'entity', 'status', 'executor_name', 'executor_inn', 'executor_kpp')
 
         return Response("OK")
 
-class UpdDevice(APIView):
 
+class UpdDevice(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-
         print("--------- Data --------------")
         rData = request.data
         print(rData)
 
-        #company = Companies.objects.filter(name=rData['executorName']['label']).get()
+        # company = Companies.objects.filter(name=rData['executorName']['label']).get()
         contract = Contracts.objects.get(name=rData['contractName']['label'])
         userId = CustomUser.objects.get(username=rData['username'])
         owner = UserCompany.objects.get(user=userId).company
 
-        resp = Devices.objects.filter(pk=rData['pk']).update(name=rData['name'], address=rData['address'], latitude=rData['latitude'], longitude=rData['longitude'], status=rData['status'], contract=contract, owner=owner)
+        resp = Devices.objects.filter(pk=rData['pk']).update(name=rData['name'], address=rData['address'],
+                                                             latitude=rData['latitude'], longitude=rData['longitude'],
+                                                             status=rData['status'], contract=contract, owner=owner)
 
         return Response("OK")
 
 
 class SendTextMessenger(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-
         print("--------- Data --------------")
         rData = request.data
         username = request.data['username']
@@ -234,8 +238,8 @@ class SendTextMessenger(APIView):
         print(resp)
         return Response("OK")
 
-class Monitoring(APIView):
 
+class Monitoring(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
@@ -247,7 +251,7 @@ class Monitoring(APIView):
 
         resp = list()
 
-        if(code=='all'):
+        if (code == 'all'):
             listValue = Sensors.objects.all()
         else:
             listValue = Sensors.objects.filter(code=code)
@@ -271,11 +275,79 @@ class Monitoring(APIView):
                 mix, max = temp_max_min[temp]
                 old_value = dict_resp['value']
                 new_value = random.randint(int(old_value), int(max))
-                if int(old_value) / int(max) * 100 >= 98:
-                    # статус оборудования - в ремонте
-                    # TODO - уточнить
+                if random.randint(1, 200) == 1 and int(old_value) / int(max) * 100 >= 98:
+                    # статус оборудования - Авария
                     dict_resp['device'].status = 'Авария'
                     dict_resp['device'].save()
+
+                    # создание нового наряда
+                    result_actions = Actions.objects.create(
+                        name='Авария',
+                        date=timezone.now().strftime('%d.%m.%Y'),
+                        type='Ремонт',
+                        typePlan='Активен',
+                        statusExecutor='В работе',
+                        checkCustomer='Не принято',
+                        device=Devices.objects.get(pk=dict_resp['device'].id)
+                    )
+
+                    # рассылка уведомлений на почту
+                    list_email_customer = []
+                    list_email_executor = []
+                    text_email_executor = None
+
+                    if dict_resp['device'].contract and dict_resp['device'].contract.status == 'Заключен':
+                        user_company_customer = UserCompany.objects.filter(
+                            company=dict_resp['device'].contract.customer)
+
+                        for user_company in user_company_customer:
+                            if user_company.user.email_user:
+                                list_email_customer.append(user_company.user.email_user)
+                        user_company_executor = UserCompany.objects.filter(
+                            company=dict_resp['device'].contract.executor)
+
+                        for user_company in user_company_executor:
+                            if user_company.user.email_user:
+                                list_email_executor.append(user_company.user.email_user)
+
+                        if user_company_executor:
+                            user_company_executor_text = f' для подрядчика {user_company_executor[0].company.name}'
+                        else:
+                            user_company_executor_text = ''
+
+                        text_email_customer = f"Внимание! На оборудовании {dict_resp['device'].name} по адресу" \
+                                              f" {dict_resp['device'].address} произошла авария датчика {temp}. " \
+                                              f"\nСформирован план работ № {result_actions.id}" \
+                                              f"{user_company_executor_text}" \
+                                              f"{'. Подрядчику направлено уведомление' if list_email_executor else ''}"
+
+                        text_email_executor = f"Внимание! На оборудовании {dict_resp['device'].name} по адресу" \
+                                              f" {dict_resp['device'].address} произошла авария датчика {temp}. " \
+                                              f"\nСформирован план работ № {result_actions.id}"
+                    else:
+                        text_email_customer = f"Внимание! На оборудовании {dict_resp['device'].name} по адресу" \
+                                              f" {dict_resp['device'].address} произошла авария датчика {temp}. " \
+                                              f"\nПлан работ не был сформирован так как для оборудования не заключен " \
+                                              f"контракт!"
+
+                    for email_user in list_email_customer:
+                        mail.send_mail(
+                            f"ВАЖНО! Авария на оборудовании {dict_resp['device'].name}!",
+                            text_email_customer,
+                            settings.EMAIL_HOST_USER,
+                            [email_user],
+                            fail_silently=False,
+                        )
+
+                    for email_user in list_email_executor:
+                        if text_email_executor:
+                            mail.send_mail(
+                                f"ВАЖНО! Авария на оборудовании {dict_resp['device'].name}!",
+                                text_email_executor,
+                                settings.EMAIL_HOST_USER,
+                                [email_user],
+                                fail_silently=False,
+                            )
 
                 old_date = dict_resp['date']
                 datetime_format = '%Y-%m-%d'
@@ -288,44 +360,44 @@ class Monitoring(APIView):
 
 
 class AddPlan(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-
         print("--------- Data --------------")
         rData = request.data
         print(rData)
 
-        #company = Companies.objects.filter(name=rData['executorName']['label']).get()
+        # company = Companies.objects.filter(name=rData['executorName']['label']).get()
         device = Devices.objects.get(name=rData['device']['label'])
 
         print(device)
-        resp = Actions.objects.create(name=rData['name'], date=rData['date'], statusExecutor=rData['statusExecutor'], checkCustomer=rData['checkCustomer'], type=rData['type'], typePlan=rData['typePlan'], device=device)
+        resp = Actions.objects.create(name=rData['name'], date=rData['date'], statusExecutor=rData['statusExecutor'],
+                                      checkCustomer=rData['checkCustomer'], type=rData['type'],
+                                      typePlan=rData['typePlan'], device=device)
 
         return Response("OK")
 
 
 class UpdPlan(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-
         print("--------- Data --------------")
         rData = request.data
         print(rData)
         print(rData['pk'])
 
-        #company = Companies.objects.filter(name=rData['executorName']['label']).get()
+        # company = Companies.objects.filter(name=rData['executorName']['label']).get()
         device = Devices.objects.get(name=rData['device']['label'])
-        resp = Actions.objects.filter(pk=rData['pk']).update(name=rData['name'], date=rData['date'], statusExecutor=rData['statusExecutor'], checkCustomer=rData['checkCustomer'], type=rData['type'], typePlan=rData['typePlan'], device=device)
+        resp = Actions.objects.filter(pk=rData['pk']).update(name=rData['name'], date=rData['date'],
+                                                             statusExecutor=rData['statusExecutor'],
+                                                             checkCustomer=rData['checkCustomer'], type=rData['type'],
+                                                             typePlan=rData['typePlan'], device=device)
 
         return Response("OK")
 
 
 class DownloadFile(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):  # , *args, **kwargs):
@@ -334,7 +406,6 @@ class DownloadFile(APIView):
 
 
 class UploadFile(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
@@ -353,7 +424,6 @@ class UploadFile(APIView):
 
 
 class UploadXmlWITSML(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
@@ -411,55 +481,12 @@ class UploadXmlWITSML(APIView):
                         value=element_text,
                         device=device if device else None,
                     )
-            # file_out = open(str(request.data['path']), 'wb')
-            # file_out.write(file.read())
             file.close()
-            # file_out.close()
-        """mypath, filename = os.path.split(request.data['path'])
-        all_xml_files = [f for f in listdir(mypath) if isfile(join(mypath, f)) and f.endswith('.xml')]
-        # TODO: добавить обработку кейса когда такого девайса нет в  line 435, in get
-        # TODO: добавить защиту от дубликатов
-        for file in all_xml_files:
-            tree = ET.parse(mypath + '/' + str(file))
-            root_tree_1 = tree.getroot()
-            complex_type = root_tree_1.find('complexType')
-            device_name = complex_type.attrib['name']
-            device = Devices.objects.get(name=device_name)
-
-            for element in complex_type.findall('element'):
-
-                # в значении удаляем пробелы и переходы на новую строку
-                element_text = element.text
-                try:
-                    element_text = int(element_text)
-                except ValueError:
-                    try:
-                        element_text = element_text.replace(',', '.')
-                        element_text = float(element_text)
-                    except ValueError:
-                        element_text = element_text.replace(' ', '')
-                        try:
-                            element_text = int(element_text)
-                        except ValueError:
-                            element_text = element_text.replace(',', '.')
-                            element_text = float(element_text)
-
-                # пишем в БД информацию
-                Sensors.objects.create(
-                    name=element.attrib['string'],
-                    code=element.attrib['name'],
-                    measurement=element.attrib['type'],
-                    min=element.attrib['min'],
-                    max=element.attrib['max'],
-                    value=element_text,
-                    device=device if device else None,
-                )"""
 
         return Response("Ok")
 
 
 class Report(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
@@ -468,10 +495,9 @@ class Report(APIView):
 
         user_instance = CustomUser.objects.get(username=self.request.user)
         company = UserCompany.objects.get(user=user_instance).company
-        #contract = Contracts.objects.filter(Q(customer=company) | Q(executor=company))
+        # contract = Contracts.objects.filter(Q(customer=company) | Q(executor=company))
 
-        if(request.data['report']['label']=='Контракты'):
-
+        if (request.data['report']['label'] == 'Контракты'):
             planContact = Contracts.objects.filter(Q(status='Планируется') & Q(customer=company)).count()
             choiceContract = Contracts.objects.filter(Q(status='Выбор подрядчика') & Q(customer=company)).count()
             acceptContract = Contracts.objects.filter(Q(status='Заключен') & Q(customer=company)).count()
@@ -484,10 +510,15 @@ class Report(APIView):
                 {'type': 'Завершено', 'value': int(endContract)},
             ]
 
-            planCost = Contracts.objects.filter(Q(status='Планируется') & Q(customer=company)).aggregate(Sum('cost'))['cost__sum']
-            choiceCost = Contracts.objects.filter(Q(status='Выбор подрядчика') & Q(customer=company)).aggregate(Sum('cost'))['cost__sum']
-            acceptCost = Contracts.objects.filter(Q(status='Заключен') & Q(customer=company)).aggregate(Sum('cost'))['cost__sum']
-            endCost = Contracts.objects.filter(Q(status='Завершен') & Q(customer=company)).aggregate(Sum('cost'))['cost__sum']
+            planCost = Contracts.objects.filter(Q(status='Планируется') & Q(customer=company)).aggregate(Sum('cost'))[
+                'cost__sum']
+            choiceCost = \
+            Contracts.objects.filter(Q(status='Выбор подрядчика') & Q(customer=company)).aggregate(Sum('cost'))[
+                'cost__sum']
+            acceptCost = Contracts.objects.filter(Q(status='Заключен') & Q(customer=company)).aggregate(Sum('cost'))[
+                'cost__sum']
+            endCost = Contracts.objects.filter(Q(status='Завершен') & Q(customer=company)).aggregate(Sum('cost'))[
+                'cost__sum']
 
             dataColumn = [
                 {'param': 'Планируется', 'value': planCost},
@@ -504,21 +535,49 @@ class Report(APIView):
             dataPie = list()
             company_all = Companies.objects.all()
             for i in company_all:
-                    executor = Contracts.objects.filter(status='Заключен', executor=i, customer=company).count()
-                    print(i.name, '   ', executor)
-                    if(executor!=0):
-                        dataPie.append({'type': i.name, 'value': executor})
+                executor = Contracts.objects.filter(status='Заключен', executor=i, customer=company).count()
+                print(i.name, '   ', executor)
+                if (executor != 0):
+                    dataPie.append({'type': i.name, 'value': executor})
 
             dataColumn = list()
             company_all = Companies.objects.all()
             for i in company_all:
-                executor = Contracts.objects.filter(status='Заключен', executor=i, customer=company).aggregate(Sum('cost'))['cost__sum']
+                executor = \
+                Contracts.objects.filter(status='Заключен', executor=i, customer=company).aggregate(Sum('cost'))[
+                    'cost__sum']
                 print(i.name, '   ', executor)
-                if(executor==None):
-                    executor=0
-                if(executor!=0):
+                if (executor == None):
+                    executor = 0
+                if (executor != 0):
                     dataColumn.append({'param': i.name, 'value': executor})
 
             resp = {'dataPie': dataPie, 'dataColumn': dataColumn}
 
         return Response(resp)
+
+
+class GetPrediction(APIView):
+#    ...
+#     """
+#     Получение значения текущего риска аварии на основе
+#     анализа данных с помощью нейросети
+#     """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+         # Загружаем обученную нейросеть
+        model_neuron = load_model('./mainapp/management/commands/weights.h5')
+         # Берем данные с датчиков
+        with open('./mainapp/api/state.json', 'r') as f:
+            state = json.load(f)
+        # Получаем предсказание
+        predict = model_neuron.predict(state['current_state'])
+        # Обновляем данные с датчиков для следующей итерации
+        state['current_state'][0][6] += 0.05
+        # Записываем данные с датчиков
+        with open('./mainapp/api/state.json', 'w') as f:
+            json.dump(state, f)
+        # Формируем ответ в процентах
+        result = ({'date': 0, 'temp': 'Вероятность аварии, %', 'value': predict[0][0]*100})
+        return Response(result)

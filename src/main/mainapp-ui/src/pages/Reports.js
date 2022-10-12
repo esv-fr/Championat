@@ -30,6 +30,7 @@ export const Reports = () => {
     const [reportUpdate, setReportUpdate] = useState(false)
     const [readyContent, setReadyContent] = useState(false)
 
+
     const optionsGauge = {
         percent: 0.75,
     }
@@ -76,9 +77,6 @@ export const Reports = () => {
                     })
         }
     }, [valueReport])
-
-    useEffect(()=>{
-    }, [])
 
 
     const styleGrid = {

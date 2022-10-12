@@ -20,6 +20,14 @@
     overflow: scroll;
 }
 
+.messengerLineCardRisk {
+    padding: 5px;
+    min-height: 50vh;
+    max-height: 50vh;
+    overflow: scroll;
+    margin-left: 10px;
+}
+
 .btnstyle {
     margin-left: 1%;
     margin-top: 5%;
